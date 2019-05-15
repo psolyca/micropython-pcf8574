@@ -5,6 +5,8 @@ Micropython 1.10
 This library aims to control PCF8574/A device through I2C.
 
 Damien "psolyca" Gaignon <damien.gaignon@gmail.com>
+
+
 """
 
 import utime
@@ -19,6 +21,35 @@ class DirectionException(Exception):
 
 
 class PCF8574():
+    """Class to control a PCF8574/A IC
+
+    Parameters:
+        i2c (:obj:`I2C`) : I2C peripheral
+        address (int) : Address of the PCF8574/A device
+        direction (str, optional) : Direction of pins
+
+            String representation of each pin (1 input / 0 output)
+
+            '10100110' = input, output, input, output\*2, input\*2, output
+        state (str, optional) : Initial digital state of pins (physical),
+
+            String representation of each pin (1 on / 0 off for output,
+            1 for input)
+
+            '10101111' = input, off, input, off, on, input\*2, on
+        inverted (str, optional) : Inverted pins
+
+            String representation of each pin (1 inverted / 0 non inverted)
+
+            '11100011' = inverted\*3, non\*3, inverted\*2
+
+    Attributes:
+        directions (bytearray): represent the direction of each pin
+        input (bytearray): bitmask of input pins
+        inverted (bytearray): bitmask of inverted pins
+        lstate (bytearray): logical state of pins
+        dstate (bytearray): digital state of pins (= lstate ^ inverted | input)
+    """
 
     INPUT = 1
     OUTPUT = 0
@@ -57,12 +88,26 @@ class PCF8574():
         return "{:08b}".format(self.lstate[0])
 
     def _alter_bitmask(self, bitmask, pin, value=True):
+        """Set/clear one bit in a bitmask.
+
+        Parameters:
+            bitmask (bytearray) :   bitmask to alter
+            pin (int):              pin 0-7 to change
+            value (bool, optional): True to set (default) / False to clear
+
+        Returns:
+            bytearray: Altered bitmask
+        """
         if value:
             return bytearray([bitmask[0] | (1 << pin)])
         else:
             return bytearray([bitmask[0] & ~(1 << pin)])
 
     def _write_state(self):
+        """Write the state to IC
+
+        The method takes care of inverted pins and input pins
+        """
         if not self.dstatef:
             self.dstatef = True
             # Inverted pins
@@ -73,6 +118,10 @@ class PCF8574():
             self.dstatef = False
 
     def _read_state(self):
+        """Read the state of IC
+
+        The method takes care of inverted pins
+        """
         if not self.dstatef:
             self.dstatef = True
             self.dstate = bytearray(self._i2c.readfrom(self._address, 1))
@@ -81,16 +130,39 @@ class PCF8574():
             self.dstatef = False
 
     def read_pin(self, pin):
+        """Read value of a pin
+
+        Parameters:
+            pin (int):  pin 0-7
+
+        Returns:
+            int: The pin value 0 or 1
+        """
         # Update self.lstate
         self._read_state()
         return self.lstate[0] >> pin & 1
 
     def write_pin(self, pin, value):
+        """Write value to an output pin
+
+        Parameters:
+            pin (int):      pin 0-7
+            value (bool) :  value to write
+        """
         if self.directions[pin] == self.OUTPUT:
             self.lstate = self._alter_bitmask(self.lstate, pin, value)
             self._write_state()
 
     def input_pin(self, pin, invert=False):
+        """Set pin(s) as input
+
+        Parameters:
+            pin (int or list): pin 0-7
+            invert (bool, optional) : True inverted pin, False non
+                inverted pin. Defaults to False.
+            
+                If a list of pins is given, invert applies to all pins
+        """
         if type(pin) == list:
             for p in pin:
                 self.inverted = self._alter_bitmask(self.inverted, pin, invert)
@@ -105,6 +177,15 @@ class PCF8574():
         self._write_state()
 
     def output_pin(self, pin, invert=False):
+        """Set pin(s) as output
+
+        Parameters:
+            pin (int or list): pin 0-7
+            invert (bool, optional) : True inverted pin, False non
+                inverted pin. Defaults to False.
+            
+                If a list of pins is given, invert applies to all pins
+        """
         if type(pin) == list:
             for p in pin:
                 self.inverted = self._alter_bitmask(self.inverted, pin, invert)
@@ -119,6 +200,17 @@ class PCF8574():
         self._write_state()
 
     def invert_pin(self, pin, invert=False):
+        """Set a pin has inverted or not
+
+        Previous state is kept
+
+        Parameters:
+            pin (int or list) :  pin 0-7
+            invert (bool, optional) : True inverted pin, False non
+                inverted pin. Defaults to False.
+            
+                If a list of pins is given, invert applies to all pins
+        """
         if type(pin) == list:
             for p in pin:
                 self.inverted = self._alter_bitmask(self.inverted, pin, invert)
