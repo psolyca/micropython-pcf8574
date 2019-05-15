@@ -49,6 +49,9 @@ class PCF8574():
         inverted (bytearray): bitmask of inverted pins
         lstate (bytearray): logical state of pins
         dstate (bytearray): digital state of pins (= lstate ^ inverted | input)
+        interrupt (int): counter for interruption
+        changed_pins (bytearray):  bytearray of [pin/value] * 8 where `pin` 
+            is set to 1 when changed and `value` is the new value of the pin.
     """
 
     INPUT = 1
@@ -227,6 +230,10 @@ class PCF8574():
         self._write_state()
 
     def _poll(self, _):
+        """Poll for changes on the PCF8574/A after interruption
+
+        To get the changed pins, use the `changed_pins` attribut.
+        """
         self.dstate[0] = self._i2c.readfrom(self._address, 1)[0]
 
         readstate = bytearray([self.dstate[0] ^ self.inverted[0]])
@@ -244,6 +251,13 @@ class PCF8574():
         self.interrupt +=1
 
     def enable_int(self, pin):
+        """Enable input interrupt
+
+        To get the changed pins, use the attribut `changed_pins`
+
+        Parameters:
+            pin (int): interrupt pin
+        """
         # Initialize changed_pins default value
         for p in range(8):
             self.changed_pins[p * 2 + 1] = self.lstate[0] >> p & 1
@@ -253,6 +267,10 @@ class PCF8574():
                         )
 
     def reset_int(self):
+        """Reset interrupt
+
+        Use this method after using the interrupt
+        """
         state = machine.disable_irq()
         for pin in range(8):
             self.changed_pins[pin * 2 ] = 0
