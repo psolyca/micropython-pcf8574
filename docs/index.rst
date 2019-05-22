@@ -67,6 +67,7 @@ Library
    :maxdepth: 2
 
    pcf8574.rst
+   pcf8574pin.rst
 
 Indices and table
 =================
