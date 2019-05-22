@@ -1,12 +1,12 @@
-# micropython-librairies
+# micropython-pcf8574
 Micropython library for PCF8574/A.
 
 ## Usage
-To use this script in your firmware, it should be placed into micropython filesystem using (ampy)[https://github.com/pycampers/ampy] or (rshell)[https://github.com/dhylands/rshell] and imported, e.g:
+To use this script in your firmware, it should be placed into micropython filesystem using [ampy](https://github.com/pycampers/ampy) or [rshell](https://github.com/dhylands/rshell) and imported, e.g:
 
 `from pcf8574 import PCF8574`.
 
-To minimize memory usage, (the official documentation)[http://docs.micropython.org/en/latest/reference/constrained.html] has been followed.
+To minimize memory usage, [the official documentation](http://docs.micropython.org/en/latest/reference/constrained.html) has been followed.
 In order to minimize file size on the system, scripts on the main branch of this repository do not contain docstrings. Thus, a special branch has been made with documented scripts.
 
 ## Precompilation
@@ -30,7 +30,7 @@ The difference between the two is that scripts in `modules` folder gets compiled
 Neither of these files will be visible when listing the filesystem with os.listdir().
 
 ## Documentation
-Documentation is provided through (Read the Docs)[https://micropython-pcf8574.readthedocs.io/en/latest/].
+Documentation is provided through [Read the Docs](https://micropython-pcf8574.readthedocs.io/en/latest/).
 
 ## Examples
 You can find examples in the module directory.
