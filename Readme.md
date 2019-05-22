@@ -29,3 +29,7 @@ To optimize further, they can be "freezed" into the firmware (Flash memory). Thi
 The difference between the two is that scripts in `modules` folder gets compiled into bytecode with `mpy-cross` tool like above, while those in `scripts` will be just freezed into Flash. Note that only `.py` scripts should be placed in both folders as anything else can cause firmware corruption. After placing scripts in either of them, rebuild is needed. This will generate new firmware image that can be flashed like usual. The scripts are immediately available using the `import` syntax from above.
 Neither of these files will be visible when listing the filesystem with os.listdir().
 
+## Examples
+You can find examples in the module directory.
+* `read_int.py` for interrupt usage
+
