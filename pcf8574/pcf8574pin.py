@@ -15,7 +15,7 @@ class PCFPin():
         self._pin = bytes([pin])
         # Initial state, useful for output toggle
         self._state = bytearray([pcf.read_pin(pin)])
-        self._inverted = bytearray([pcf.inverted[0] >> pin & 1])
+        self._inverted = bytearray(pcf.inverted(pin))
 
     def value(self, value=None):
         if value is None:
@@ -36,7 +36,7 @@ class PCFPin():
 
     def mode(self, value=None, invert=False):
         if value is None:
-            return self._pcf.directions[self._pin[0]]
+            return self._pcf.direction(self._pin[0])
         else:
             if value == "IN":
                 self._pcf.input_pin(self._pin[0], invert)
