@@ -278,6 +278,7 @@ class PCF8574():
         machine.enable_irq(state)
     
     def disable_int(self):
+        """Disable interrupt"""
         machine.disable_irq()
         self.changed_pins = bytearray(16)
         self.interrupt = 0
