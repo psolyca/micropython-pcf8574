@@ -35,7 +35,7 @@ class PCFPin():
             value (bool, optional)
 
         Returns:
-            (int)
+            int: logical value of the pin
         """
         if value is None:
             return self._pcf.read_pin(self._pin[0])
@@ -65,7 +65,7 @@ class PCFPin():
                 False non inverted pin. Default to False.
 
         Returns:
-            (int) : 1 for input, 0 for output
+            int: 1 for input, 0 for output
         """
         if value is None:
             return self._pcf.direction(self._pin[0])
