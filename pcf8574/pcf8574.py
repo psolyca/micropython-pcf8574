@@ -70,6 +70,12 @@ class PCF8574():
         self.dstate = bytearray(1)
         # Flag to avoid one/multiple use of read and/or write from/to IC
         self.dstatef = False
+        # Pre-allocate interrupt handler
+        self._alloc_poll = self._poll
+        # Interruption counter
+        self.interrupt = False
+        # Array of changed pins for interruption ([pin\value] * 8)
+        self.changed_pins = bytearray(16)
 
         if direction is not None:
             direction = list(direction)
@@ -220,3 +226,35 @@ class PCF8574():
 
         self._write_state()
 
+    def _poll(self, _):
+        self.dstate[0] = self._i2c.readfrom(self._address, 1)[0]
+
+        readstate = bytearray([self.dstate[0] ^ self.inverted[0]])
+        for pin in range(8):
+            if self.directions[pin] == self.INPUT:
+                # Check if the pin has changed
+                if (self.lstate[0] >> pin & 1) != (readstate[0] >> pin & 1):
+                    # Changed the state of the pin
+                    self.lstate = self._alter_bitmask(
+                        self.lstate,
+                        pin,
+                        readstate[0] >> pin & 1)
+                    self.changed_pins[pin * 2] = 1
+                    self.changed_pins[pin * 2 + 1] = readstate[0] >> pin & 1
+        self.interrupt +=1
+
+    def enable_int(self, pin):
+        # Initialize changed_pins default value
+        for p in range(8):
+            self.changed_pins[p * 2 + 1] = self.lstate[0] >> p & 1
+        self._int_pin = machine.Pin(pin, machine.Pin.IN, machine.Pin.PULL_UP)
+        self._int_pin.irq(trigger = machine.Pin.IRQ_FALLING,
+                        handler = self._alloc_poll
+                        )
+
+    def reset_int(self):
+        state = machine.disable_irq()
+        for pin in range(8):
+            self.changed_pins[pin * 2 ] = 0
+        self.interrupt -= 1
+        machine.enable_irq(state)
