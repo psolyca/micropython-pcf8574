@@ -76,7 +76,7 @@ class PCF8574():
         # Pre-allocate interrupt handler
         self._alloc_poll = self._poll
         # Interruption counter
-        self.interrupt = False
+        self.interrupt = 0
         # Array of changed pins for interruption ([pin\value] * 8)
         self.changed_pins = bytearray(16)
 
@@ -276,3 +276,8 @@ class PCF8574():
             self.changed_pins[pin * 2 ] = 0
         self.interrupt -= 1
         machine.enable_irq(state)
+    
+    def disable_int(self):
+        machine.disable_irq()
+        self.changed_pins = bytearray(16)
+        self.interrupt = 0
