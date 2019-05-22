@@ -62,17 +62,17 @@ class PCF8574():
         self._i2c = i2c
         self._address = address
         # Direction of pins
-        self.directions = bytearray([self.UNDEF] * 8)
+        self._directions = bytearray([self.UNDEF] * 8)
         # Input pins bitmask
-        self.input = bytearray(1)
+        self._input = bytearray(1)
         # Inverted pins bitmask
-        self.inverted = bytearray(1)
+        self._inverted = bytearray(1)
         # Logical state of pins (inverted)
-        self.lstate = bytearray(1)
+        self._lstate = bytearray(1)
         # Digital state of pins (non inverted)
-        self.dstate = bytearray(1)
+        self._dstate = bytearray(1)
         # Flag to avoid one/multiple use of read and/or write from/to IC
-        self.dstatef = False
+        self._dstatef = False
         # Pre-allocate interrupt handler
         self._alloc_poll = self._poll
         # Interruption counter
@@ -82,19 +82,19 @@ class PCF8574():
 
         if direction is not None:
             direction = list(direction)
-            self.directions = bytearray(int(x) for x in direction)
-            self.input[0] = int(''.join(reversed(direction)),2)
+            self._directions = bytearray(int(x) for x in direction)
+            self._input[0] = int(''.join(reversed(direction)),2)
         if inverted is not None:
-            self.inverted[0] = int(''.join(reversed(list(inverted))),2)
+            self._inverted[0] = int(''.join(reversed(list(inverted))),2)
         if state is not None:
-            self.lstate[0] = int(''.join(reversed(list(state))),2)
-            self.dstate[0] = self.lstate[0] ^ self.inverted[0]
-            self.dstate[0] = self.dstate[0] | self.input[0]
-            self._i2c.writeto(self._address, self.dstate)
+            self._lstate[0] = int(''.join(reversed(list(state))),2)
+            self._dstate[0] = self._lstate[0] ^ self._inverted[0]
+            self._dstate[0] = self._dstate[0] | self._input[0]
+            self._i2c.writeto(self._address, self._dstate)
 
     def __repr__(self):
         """Bit representation of pin states"""
-        return "{:08b}".format(self.lstate[0])
+        return "{:08b}".format(self._lstate[0])
 
     def _alter_bitmask(self, bitmask, pin, value=True):
         """Set/clear one bit in a bitmask.
@@ -117,26 +117,26 @@ class PCF8574():
 
         The method takes care of inverted pins and input pins
         """
-        if not self.dstatef:
-            self.dstatef = True
+        if not self._dstatef:
+            self._dstatef = True
             # Inverted pins
-            self.dstate[0] = self.lstate[0] ^ self.inverted[0]
+            self._dstate[0] = self._lstate[0] ^ self._inverted[0]
             # Input pins to high
-            self.dstate[0] = self.dstate[0] | self.input[0]
-            self._i2c.writeto(self._address, self.dstate)
-            self.dstatef = False
+            self._dstate[0] = self._dstate[0] | self._input[0]
+            self._i2c.writeto(self._address, self._dstate)
+            self._dstatef = False
 
     def _read_state(self):
         """Read the state of IC
 
         The method takes care of inverted pins
         """
-        if not self.dstatef:
-            self.dstatef = True
-            self.dstate = bytearray(self._i2c.readfrom(self._address, 1))
+        if not self._dstatef:
+            self._dstatef = True
+            self._dstate = bytearray(self._i2c.readfrom(self._address, 1))
             # Inverted pins
-            self.lstate[0] = self.dstate[0] ^ self.inverted[0]
-            self.dstatef = False
+            self._lstate[0] = self._dstate[0] ^ self._inverted[0]
+            self._dstatef = False
 
     def read_pin(self, pin):
         """Read value of a pin
@@ -147,9 +147,9 @@ class PCF8574():
         Returns:
             int: The pin value 0 or 1
         """
-        # Update self.lstate
+        # Update self._lstate
         self._read_state()
-        return self.lstate[0] >> pin & 1
+        return self._lstate[0] >> pin & 1
 
     def write_pin(self, pin, value):
         """Write value to an output pin
@@ -158,8 +158,8 @@ class PCF8574():
             pin (int):      pin 0-7
             value (bool) :  value to write
         """
-        if self.directions[pin] == self.OUTPUT:
-            self.lstate = self._alter_bitmask(self.lstate, pin, value)
+        if self._directions[pin] == self.OUTPUT:
+            self._lstate = self._alter_bitmask(self._lstate, pin, value)
             self._write_state()
 
     def input_pin(self, pin, invert=False):
@@ -174,14 +174,14 @@ class PCF8574():
         """
         if type(pin) == list:
             for p in pin:
-                self.inverted = self._alter_bitmask(self.inverted, pin, invert)
-                self.input = self._alter_bitmask(self.input, pin, True)
-                self.directions[pin] = self.INPUT
+                self._inverted = self._alter_bitmask(self._inverted, pin, invert)
+                self._input = self._alter_bitmask(self._input, pin, True)
+                self._directions[pin] = self._input
         else:
-            self.inverted = self._alter_bitmask(self.inverted, pin, invert)
-            self.input = self._alter_bitmask(self.input, pin, True)
-            self.directions[pin] = self.INPUT
-        self.lstate[0] = self.dstate[0] ^ self.inverted[0]
+            self._inverted = self._alter_bitmask(self._inverted, pin, invert)
+            self._input = self._alter_bitmask(self._input, pin, True)
+            self._directions[pin] = self._input
+        self._lstate[0] = self._dstate[0] ^ self._inverted[0]
 
         self._write_state()
 
@@ -197,14 +197,14 @@ class PCF8574():
         """
         if type(pin) == list:
             for p in pin:
-                self.inverted = self._alter_bitmask(self.inverted, pin, invert)
-                self.input = self._alter_bitmask(self.input, pin, False)
-                self.directions[pin] = self.OUTPUT
+                self._inverted = self._alter_bitmask(self._inverted, pin, invert)
+                self._input = self._alter_bitmask(self._input, pin, False)
+                self._directions[pin] = self.OUTPUT
         else:
-            self.inverted = self._alter_bitmask(self.inverted, pin, invert)
-            self.input = self._alter_bitmask(self.input, pin, False)
-            self.directions[pin] = self.OUTPUT
-        self.lstate[0] = self.dstate[0] ^ self.inverted[0]
+            self._inverted = self._alter_bitmask(self._inverted, pin, invert)
+            self._input = self._alter_bitmask(self._input, pin, False)
+            self._directions[pin] = self.OUTPUT
+        self._lstate[0] = self._dstate[0] ^ self._inverted[0]
 
         self._write_state()
 
@@ -222,10 +222,10 @@ class PCF8574():
         """
         if type(pin) == list:
             for p in pin:
-                self.inverted = self._alter_bitmask(self.inverted, pin, invert)
+                self._inverted = self._alter_bitmask(self._inverted, pin, invert)
         else:
-            self.inverted = self._alter_bitmask(self.inverted, pin, invert)
-        self.lstate[0] = self.dstate[0] ^ self.inverted[0]
+            self._inverted = self._alter_bitmask(self._inverted, pin, invert)
+        self._lstate[0] = self._dstate[0] ^ self._inverted[0]
 
         self._write_state()
 
@@ -234,16 +234,16 @@ class PCF8574():
 
         To get the changed pins, use the `changed_pins` attribut.
         """
-        self.dstate[0] = self._i2c.readfrom(self._address, 1)[0]
+        self._dstate[0] = self._i2c.readfrom(self._address, 1)[0]
 
-        readstate = bytearray([self.dstate[0] ^ self.inverted[0]])
+        readstate = bytearray([self._dstate[0] ^ self._inverted[0]])
         for pin in range(8):
-            if self.directions[pin] == self.INPUT:
+            if self._directions[pin] == self._input:
                 # Check if the pin has changed
-                if (self.lstate[0] >> pin & 1) != (readstate[0] >> pin & 1):
+                if (self._lstate[0] >> pin & 1) != (readstate[0] >> pin & 1):
                     # Changed the state of the pin
-                    self.lstate = self._alter_bitmask(
-                        self.lstate,
+                    self._lstate = self._alter_bitmask(
+                        self._lstate,
                         pin,
                         readstate[0] >> pin & 1)
                     self.changed_pins[pin * 2] = 1
@@ -260,7 +260,7 @@ class PCF8574():
         """
         # Initialize changed_pins default value
         for p in range(8):
-            self.changed_pins[p * 2 + 1] = self.lstate[0] >> p & 1
+            self.changed_pins[p * 2 + 1] = self._lstate[0] >> p & 1
         self._int_pin = machine.Pin(pin, machine.Pin.IN, machine.Pin.PULL_UP)
         self._int_pin.irq(trigger = machine.Pin.IRQ_FALLING,
                         handler = self._alloc_poll
@@ -282,3 +282,9 @@ class PCF8574():
         machine.disable_irq()
         self.changed_pins = bytearray(16)
         self.interrupt = 0
+
+    def inverted(self, pin):
+        return self._inverted[0] >> pin & 1
+
+    def direction(self, pin):
+        return self._directions[pin]
