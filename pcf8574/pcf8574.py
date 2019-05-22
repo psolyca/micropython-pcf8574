@@ -44,11 +44,6 @@ class PCF8574():
             '11100011' = inverted\*3, non\*3, inverted\*2
 
     Attributes:
-        directions (bytearray): represent the direction of each pin
-        input (bytearray): bitmask of input pins
-        inverted (bytearray): bitmask of inverted pins
-        lstate (bytearray): logical state of pins
-        dstate (bytearray): digital state of pins (= lstate ^ inverted | input)
         interrupt (int): counter for interruption
         changed_pins (bytearray):  bytearray of [pin/value] * 8 where `pin` 
             is set to 1 when changed and `value` is the new value of the pin.
@@ -284,7 +279,23 @@ class PCF8574():
         self.interrupt = 0
 
     def inverted(self, pin):
+        """Return the inverted state of a pin
+
+        Parameters:
+            pin (int): pin 0-7
+
+        Returns:
+            int: 1 for inverted, 0 for non inverted
+        """
         return self._inverted[0] >> pin & 1
 
     def direction(self, pin):
+        """Return the direction of a pin
+
+        Parameters:
+            pin (int): pin 0-7
+
+        Returns:
+            int: 1 for input, 0 for output
+        """
         return self._directions[pin]
