@@ -32,4 +32,5 @@ Neither of these files will be visible when listing the filesystem with os.listd
 ## Examples
 You can find examples in the module directory.
 * `read_int.py` for interrupt usage
+* `read_aswitch.py` for aswitch and uasyncio usage
 
