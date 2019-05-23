@@ -19,7 +19,9 @@ class PCFPin():
 
     def value(self, value=None):
         if value is None:
-            return self._pcf.read_pin(self._pin[0])
+            # Update state
+            self._state[0] = self._pcf.read_pin(self._pin[0])
+            return self._state[0]
         else:
             self._pcf.write_pin(self._pin[0], value)
             self._state[0] = value
@@ -31,7 +33,7 @@ class PCFPin():
         self.value(not self._inverted[0])
 
     def toggle(self):
-        self._state[0] = not self._state[0]
+        self._state[0] = not self.value()
         self._pcf.write_pin(self._pin[0], self._state[0])
 
     def mode(self, value=None, invert=False):
@@ -54,10 +56,10 @@ class PCFPin():
         if self._inverted[0] == 0:
             self._pcf.invert_pin(self._pin[0], True)
             self._inverted[0] = 1
-            self._state[0] = not self._state[0]
+            self._state[0] = not self.value()
 
     def noninverted(self):
         if self._inverted[0] == 1:
             self._pcf.invert_pin(self._pin[0], False)
             self._inverted[0] = 0
-            self._state[0] = not self._state[0]
+            self._state[0] = not self.value()
