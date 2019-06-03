@@ -5,6 +5,8 @@ Micropython 1.10
 This library aims to control PCF8574/A device through I2C.
 
 Damien "psolyca" Gaignon <damien.gaignon@gmail.com>
+
+Based on https://git.cryhost.de/crycode/node-pcf8574
 """
 
 import utime
